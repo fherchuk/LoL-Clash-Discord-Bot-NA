@@ -1,7 +1,9 @@
+from pickle import FALSE
 import discord
 from datetime import datetime
 import requests
 import random
+import riot_api
 
 # big brain file hosting :)
 rank_assets = {
@@ -15,6 +17,15 @@ rank_assets = {
     "MASTER": "https://cdn.discordapp.com/attachments/989905618494181386/989905732654739516/master.png?size=4096",
     "GRANDMASTER": "https://cdn.discordapp.com/attachments/989905618494181386/989905732176592956/grandmaster.png?size=4096",
     "CHALLANGER": "https://cdn.discordapp.com/attachments/989905618494181386/989905731186749470/challenger.png?size=4096" 
+}
+
+position_assets = {
+    "TOP": "<:role_TOP:1111331521681436832>",
+    "MIDDLE": "<:role_MIDDLE:1111330569738006679>",
+    "JUNGLE": "<:role_JUNGLE:1111330795035054180>",
+    "UTILITY": "<:role_UTILITY:1111331686886686851>",
+    "BOTTOM": "<:role_BOTTOM:1111330694325612608>",
+    "FILL": "<:role_FILL:1111331796290895923>" 
 }
 
 champion_info = requests.get("https://ddragon.leagueoflegends.com/cdn/12.12.1/data/en_US/champion.json").json()
@@ -96,6 +107,34 @@ async def generate_history_embed(match_history):
                 else:
                     embed.add_field(name=f"{':blue_circle:' if match.winner == participant.team else ':red_circle:'} {i+1} - {match.queue_type} - {participant.champion_name} {participant.kills}/{participant.deaths}/{participant.assists} - {m:02d}:{s:02d}", value=f"KDA: **{participant.kda()}**, CS: **{participant.creep_score}** ({round(float(participant.creep_score)/(float(match.duration)/60.0), 2)}), DMG: **{participant.damage}**, GOLD: **{participant.gold}**", inline=False)
     return embed
+
+async def generate_clash_embed(teamData, users):
+
+    embed = discord.Embed(title = f"{teamData['name']}", description=f"Clash Team Tier {teamData['tier']}")
+    for i in range(len(teamData['players'])):
+        position = await position_emoji(teamData['players'][i]['position'])
+        embed.add_field(name=f"{teamData['players'][i]['summonerId']}   {await role_emoji(teamData['players'][i]['role'])}", value=f"Position Selected:\u1CBC {position} \u1CBC\u1CBC\u1CBC\u1CBC\u1CBC\u1CBC Rank:Solo/Duo - {users[i].rank_solo}",inline=False)
+    empty = 4 - i
+    while empty > 0:
+        embed.add_field(name=f"Empty", value=f"Position: N/A", inline=False)
+        empty -= 1
+
+    embed.add_field(name="Team Profiles:", value="")
+    return embed
+
+
+async def role_emoji(role):
+    if role == "CAPTAIN":
+        return ':star: - (Captain)'
+    else:
+        return ""
+
+async def position_emoji(position):
+    if position == "UNSELECTED":
+        return "???"
+    else: 
+        return position_assets[position]
+
 
 async def repair_champ_name(champ_name):
     new_champ_name = ""

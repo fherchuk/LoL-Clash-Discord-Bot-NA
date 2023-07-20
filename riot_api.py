@@ -5,10 +5,22 @@ class RiotAPI:
     queueTypes = {400: "Draft", 420: "Solo/Duo", 430: "Blind", 440: "Flex", 450: "ARAM", 700: "Clash"}
     queueWeight = {"UNRANKED": -1, "IRON": 0, "BRONZE": 1, "SILVER": 2, "GOLD": 3, "PLATINUM": 4, "DIAMOND": 5, "MASTER": 6, "GRANDMASTER": 7, "CHALLENGER": 8}
 
-    def __init__(self, api_key, server="eun1", region="europe"):
+    def __init__(self, api_key, server="na1", region="americas"):
         self.api_key = api_key
         self.base_url = f'https://{server}.api.riotgames.com/lol/'
         self.base_url_universal = f'https://{region}.api.riotgames.com/lol/'
+    
+    async def get_name_from_id(self, id):
+        url = f"{self.base_url}summoner/v4/summoners/{id}"
+        params = {'api_key': self.api_key}
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, params=params) as response:
+                data = await response.json()
+                if response.status == 200:
+                    data["status_code"] = response.status
+                    data["message"] = "Summoner found"
+                    return data['name']
+                return data["status"]   
 
     async def get_summoner_by_name(self, summoner_name):
         url = f"{self.base_url}summoner/v4/summoners/by-name/{summoner_name}"
@@ -97,7 +109,7 @@ class RiotAPI:
         return [matches_infos, data[1]]
 
     async def get_recent_match_info(self, username, id=0):
-        match_data = await self.get_recent_matches_ids(username, id+1)
+        match_data = await self.get_recent_matches_ids(username, id+1)           
         if(len(match_data[0]) > id):
             return await self.get_match_info_by_id(match_data[0][id])
         return None
@@ -179,3 +191,39 @@ class RiotAPI:
             total_points += champion[2]
         user = UserInfo(id, summoner_name, level, icon, rank_solo, rank_flex, lp_solo, lp_flex, wins_solo, losses_solo, wins_flex, losses_flex,max_division, top_champs, total_points, total_mastery)
         return {"status_code": 200, "user": user}
+
+
+    async def get_team_id(self, username):
+        summoner = await self.get_summoner_by_name(username)
+        sid = summoner["id"]
+        url = f"{self.base_url}clash/v1/players/by-summoner/{sid}"
+        params = {'api_key': self.api_key}
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, params=params) as response:
+                data = await response.json()
+                if response.status == 200 and data != []:
+                    return data[0]["teamId"]
+                return False
+
+    async def get_clash_team(self, teamId):
+        url = f"{self.base_url}clash/v1/teams/{teamId}"
+        params = {'api_key': self.api_key}
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, params=params) as response:
+                data = await response.json()
+                if response.status == 200:
+                    return data
+                return data["status"]
+
+
+
+
+    async def get_clash_schedule(self):
+        url = f"{self.base_url}clash/v1/tournaments"
+        params = {'api_key': self.api_key}
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, params=params) as response:
+                data = await response.json()
+                if response.status == 200:
+                    return data
+                return data["status"]

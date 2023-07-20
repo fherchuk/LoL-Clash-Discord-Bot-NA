@@ -1,4 +1,11 @@
 
+from cmd import IDENTCHARS
+from ctypes.wintypes import LONG
+from dataclasses import dataclass
+from datetime import datetime
+import string
+
+
 class GameInfo:
     def __init__(self, id, start_time, duration, winner, participants, queue_type):
         self.id = id
@@ -49,3 +56,14 @@ class UserInfo:
         self.top_champs = top_champs
         self.total_points = total_points
         self.total_mastery = total_mastery
+
+@dataclass
+class ClashTournament:
+    clashId: int
+    themeId: int
+    nameKey: str
+    nameKeySecondary: str
+    phaseId: int
+    registrationTime: datetime
+    startTime: datetime
+    canceled: bool
