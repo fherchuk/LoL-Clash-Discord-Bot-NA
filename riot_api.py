@@ -123,8 +123,14 @@ class RiotAPI:
                 data = await response.json()
                 for rankData in data:
                     queue = rankData["queueType"]
-                    tier = rankData["tier"]
-                    rank = rankData["rank"]
+                    try:
+                        tier = rankData["tier"]
+                    except:
+                        tier = "UNRANKED"
+                    try: 
+                        rank = rankData["rank"]
+                    except:
+                        rank = "UNRANKED"
                     lp = rankData["leaguePoints"]
                     wins = rankData["wins"]
                     losses = rankData["losses"]
